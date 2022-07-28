@@ -4,6 +4,11 @@ class Blog:
         self.posts = []
         self.current_user = None
         
+    def _get_post_from_id(self, post_id):
+        for post in self.posts:
+            if post.id == int(post_id):
+                return post
+           
     # Method to add new users to the blog
     def create_new_user(self):
         # Get user info from input
@@ -63,6 +68,76 @@ class Blog:
                 print(post)
         else:
             print("There are currently no posts for this blog :(")
+            
+    # Method to view a single post
+    def view_post(self, post_id):
+        post = self._get_post_from_id(post_id)
+        if post:
+            print(post)
+        else:
+            print(f"Post with an id of {post_id} does not exist.")
+            
+    # Method to edit a single post
+    def edit_post(self, post_id):
+        post = self._get_post_from_id(post_id)
+        if post:
+            # Check that the user is logged in AND that the logged in user is author of the post
+            if self.current_user is not None and self.current_user == post.author:
+                print(post)
+                # Ask the user which part of the post they would like to edit
+                edit_part = input('Would you like to edit the title, body, both, or exit? ').lower()
+                # Make sure they choose an acceptable response
+                while edit_part not in {'title', 'body', 'both', 'exit'}:
+                    edit_part = input('Would you like to edit the title, body, both, or exit? ').lower()
+                if edit_part == 'exit':
+                    return
+                elif edit_part == 'both':
+                    # Get new title and body
+                    new_title = input('Enter the new title: ')
+                    new_body = input('Enter the new body: ')
+                    # Edit post with post.update method
+                    post.update(title=new_title, body=new_body)
+                elif edit_part == 'title':
+                    # Get new title
+                    new_title = input('Enter the new title: ')
+                    # Edit post with post.update method
+                    post.update(title=new_title)
+                elif edit_part == 'body':
+                    # Get new body
+                    new_body = input('Enter the new body: ')
+                    # Edit post with post.update method
+                    post.update(body=new_body)
+                print(f"{post.title.title()} has been updated")
+                
+            # If logged in but not author 
+            elif self.current_user is not None:
+                print("You do not have permission to edit this post") # 403
+            # If not logged in nor the author 
+            else:
+                print('You must be logged in to perform this action') # 401
+        else:
+            print(f"Post with an id of {post_id} does not exist.")
+            
+    # Method to delete a single post
+    def delete_post(self, post_id):
+        # Call private method to either return Post object or None
+        post = self._get_post_from_id(post_id)
+        # If Post object returned
+        if post:
+            # Check that the user is logged in AND that the logged in user is author of the post
+            if self.current_user is not None and self.current_user == post.author:
+                # Set blog post list to a new list of posts that do not include the post to delete
+                self.posts.remove(post)
+                print(f"{post.title} has been deleted")
+            # If logged in but not author 
+            elif self.current_user is not None:
+                print("You do not have permission to delete this post") # 403
+            # If not logged in nor the author 
+            else:
+                print('You must be logged in to perform this action') # 401
+        # If None is returned
+        else:
+            print(f"Post with an id of {post_id} does not exist")
 
 
 class User:
@@ -110,6 +185,13 @@ class Post:
     
     def __repr__(self):
         return f"<Post {self.id}|{self.title}>"
+    
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if key in {'title', 'body'}:
+                setattr(self, key, value)
+
+
 
 
 # Define function to run blog
@@ -120,11 +202,10 @@ def run_blog():
     while True:
         # if there is no current user logged in
         if my_blog.current_user is None:
-            print("1. Sign Up\n2. Log In\n3. View All Posts\n5. Quit")
+            print("1. Sign Up\n2. Log In\n3. View All Posts\n4. View Single Post\n5. Quit")
             to_do = input('Which option would you like to do? ')
-            while to_do not in {'1', '5', '2', '3'}:
-                to_do = input('Not valid. Please choose 1, 2, 3, or 5')
-            # clear_output()
+            while to_do not in {'1', '5', '2', '3', '4'}:
+                to_do = input('Not valid. Please choose 1, 2, 3, 4 or 5')
             if to_do == '5':
                 print('Thanks for checking out our blog')
                 break
@@ -137,13 +218,16 @@ def run_blog():
             elif to_do == '3':
                 # method to view all posts
                 my_blog.view_posts()
+            elif to_do == '4':
+                # method to view a single post
+                post_id = input('What is the id of the post you would like to view? ')
+                my_blog.view_post(post_id)
         # If there is a current user (aka a logged in user)
         else:
-            print("1. Log Out\n2. Create New Post\n3. View All Posts")
+            print("1. Log Out\n2. Create New Post\n3. View All Posts\n4. View Single Post\n5. Edit A Post\n6. Delete a Post")
             to_do = input('Which option would you like to do? ')
-            while to_do not in {'1', '2', '3'}:
-                to_do = input('Not valid. Please choose 1, 2, 3')
-            # clear_output()
+            while to_do not in {'1', '2', '3', '4', '5', '6'}:
+                to_do = input('Not valid. Please choose 1, 2, 3, 4, 5, or 6')
             if to_do == '1':
                 # method to log user out
                 my_blog.log_user_out()
@@ -153,6 +237,18 @@ def run_blog():
             elif to_do == '3':
                 # method to view all posts
                 my_blog.view_posts()
+            elif to_do == '4':
+                # method to view a single post
+                post_id = input('What is the id of the post you would like to view? ')
+                my_blog.view_post(post_id)
+            elif to_do == '5':
+                # method to edit a single post
+                post_id = input('What is the id of the post you would like to edit? ')
+                my_blog.edit_post(post_id)
+            elif to_do == '6':
+                # method to delete a single post
+                post_id = input('What is the id of the post you would like to delete? ')
+                my_blog.delete_post(post_id)
             
             
             
